@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prymage Enterprise Systems | Pilot Verification Site</title>
+  <meta name="description" content="Prymage test environment for telemetry, GA4 key event tracking, and agent verification.">
+
+  <!-- SEARCH CONSOLE HTML-TAG VERIFICATION (Add your tag code here when provided) -->
+  <!-- <meta name="google-site-verification" content="PASTE_VERIFICATION_TOKEN_HERE" /> -->
+
+  <!-- =================================================================== -->
+  <!-- GOOGLE ANALYTICS 4 (GA4) TRACKING CODE                              -->
+  <!-- Replace 'G-EP0Y94K2B6' with your pilot GA4 Measurement ID           -->
+  <!-- =================================================================== -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-EP0Y94K2B6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    // Replace with your real test property Measurement ID:
+    gtag('config', 'G-EP0Y94K2B6', {
+      'debug_mode': true // Enables GA4 DebugView for real-time verification
+    });
+  </script>
+
+  <style>
+    :root {
+      --primary: #4B1E78;       /* Prymage Royal Purple */
+      --primary-dark: #321154;
+      --secondary: #D4AF37;     /* Prymage Gold */
+      --secondary-hover: #b8972c;
+      --bg-light: #F8F9FA;
+      --card-bg: #FFFFFF;
+      --text-dark: #1E293B;
+      --text-muted: #64748B;
+      --success: #10B981;
+      --border: #E2E8F0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--secondary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .brand-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .badge-pilot {
+      background: rgba(212, 175, 55, 0.2);
+      border: 1px solid var(--secondary);
+      color: var(--secondary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .hero {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      margin-bottom: 2rem;
+    }
+
+    .hero h1 {
+      font-size: 2.2rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.85rem 1.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--primary-dark);
+    }
+
+    .btn-secondary:hover {
+      background: var(--secondary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .grid-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-section { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .card h2 {
+      font-size: 1.3rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--text-dark);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .event-log {
+      background: #0F172A;
+      color: #E2E8F0;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .event-item {
+      padding: 0.35rem 0;
+      border-bottom: 1px solid #1E293B;
+    }
+
+    .event-tag {
+      color: var(--secondary);
+      font-weight: 600;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .alert-success {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">P</div>
+      <span class="brand-name">Prymage</span>
+      <span class="badge-pilot">Pilot Sandbox</span>
+    </div>
+    <div style="font-size: 0.85rem; color: #CBD5E1;">
+      Autonomous Agent Telemetry Harness
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- HERO SECTION WITH DEMO BUTTON -->
+    <section class="hero">
+      <h1>Custom ERP &amp; Business Intelligence for West Africa</h1>
+      <p>
+        Streamline multi-branch operations, automated statutory compliance (Ghana GRA &amp; Nigeria FIRS), and executive analytics.
+      </p>
+      <div>
+        <!-- Triggers demo_interest event -->
+        <button id="btn-demo-cta" class="btn btn-secondary" onclick="handleDemoClick()">
+          Register Demo Interest &rarr;
+        </button>
+      </div>
+      <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+        Notice: Clicking this button records demonstration interest (<code>demo_interest</code>), not a completed booking.
+      </div>
+    </section>
+
+    <div class="grid-section">
+
+      <!-- LEAD GENERATION FORM -->
+      <div class="card">
+        <h2>Submit Pilot Inquiry</h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Submitting this test form sends the standard <code>generate_lead</code> event to GA4.
+        </p>
+
+        <div id="form-feedback" class="alert alert-success">
+          <strong>Lead Generated!</strong> Event <code>generate_lead</code> fired successfully to GA4.
+        </div>
+
+        <form id="lead-form" onsubmit="handleLeadSubmit(event)">
+          <div class="form-group">
+            <label for="contact-name">Full Name *</label>
+            <input type="text" id="contact-name" required placeholder="e.g. Kwame Mensah">
+          </div>
+          <div class="form-group">
+            <label for="contact-email">Work Email *</label>
+            <input type="email" id="contact-email" required placeholder="name@company.com">
+          </div>
+          <div class="form-group">
+            <label for="contact-region">Country / Operating Market *</label>
+            <select id="contact-region" required>
+              <option value="GH">Ghana (GH)</option>
+              <option value="NG">Nigeria (NG)</option>
+              <option value="OTHER">Other Region (for geo-filter test)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="contact-interest">Primary Requirement</label>
+            <select id="contact-interest">
+              <option value="erp">ERP Implementation</option>
+              <option value="bi">Business Intelligence Dashboard</option>
+              <option value="training">Corporate IT Training</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-submit-lead">
+            Submit Test Inquiry
+          </button>
+        </form>
+      </div>
+
+      <!-- REAL-TIME TELEMETRY EVENT LOG -->
+      <div class="card">
+        <h2>Live Event Telemetry Log</h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Real-time log of <code>gtag('event', ...)</code> calls sent from this browser session:
+        </p>
+        <div id="telemetry-log" class="event-log">
+          <div class="event-item" style="color: #64748B;">
+            [Ready] Waiting for user actions...
+          </div>
+        </div>
+        <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+          Tip: In GA4, open <strong>Admin &gt; DebugView</strong> to confirm incoming events in real time.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>
+    Prymage Pilot Verification Site &bull; Designed for Agent Telemetry Reconciliation &bull; Not for Production Use
+  </footer>
+
+  <script>
+    function logEvent(eventName, params) {
+      const logContainer = document.getElementById('telemetry-log');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'event-item';
+      entry.innerHTML = `<span style="color: #94A3B8;">[${time}]</span> <span class="event-tag">${eventName}</span>: ${JSON.stringify(params)}`;
+      
+      // Remove placeholder if present
+      if (logContainer.children.length === 1 && logContainer.children[0].innerText.includes('[Ready]')) {
+        logContainer.innerHTML = '';
+      }
+      logContainer.prepend(entry);
+    }
+
+    // 1. DEMO INTEREST BUTTON CLICK
+    // Labelled as an interaction click, not a completed booking
+    function handleDemoClick() {
+      const params = {
+        event_category: 'engagement',
+        event_label: 'hero_demo_interest',
+        link_text: document.getElementById('btn-demo-cta').textContent.trim()
+      };
+
+      // Send to GA4
+      if (typeof gtag === 'function') {
+        gtag('event', 'demo_interest', params);
+      }
+
+      logEvent('demo_interest', params);
+      alert('Demo button clicked! Event "demo_interest" sent to GA4.');
+    }
+
+    // 2. LEAD FORM SUBMISSION
+    // Fires generate_lead after a valid test-form submission (per Google guidance)
+    function handleLeadSubmit(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('contact-name').value.trim();
+      const email = document.getElementById('contact-email').value.trim();
+      const region = document.getElementById('contact-region').value;
+      const interest = document.getElementById('contact-interest').value;
+
+      if (!name || !email) return;
+
+      const params = {
+        event_category: 'lead_form',
+        interest: interest,
+        declared_market: region,
+        value: 1, // Standard numeric value for lead attribution
+        currency: 'USD'
+      };
+
+      // Send standard generate_lead event to GA4
+      if (typeof gtag === 'function') {
+        gtag('event', 'generate_lead', params);
+      }
+
+      logEvent('generate_lead', params);
+
+      // Show success feedback
+      const feedback = document.getElementById('form-feedback');
+      feedback.style.display = 'block';
+      document.getElementById('lead-form').reset();
+
+      setTimeout(() => {
+        feedback.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

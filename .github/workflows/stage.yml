@@ -1,0 +1,54 @@
+name: Stage website copy
+on:
+  workflow_dispatch:
+    inputs:
+      field:
+        type: choice
+        required: true
+        options: [page_title, meta_description, hero_headline, hero_subhead, hero_cta_text]
+      text:
+        type: string
+        required: true
+      rationale:
+        type: string
+        required: true
+      evidence_ids:
+        description: 'JSON array of source evidence IDs, e.g. ["market:123"]'
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: src
+      STAGING_REPOSITORY: ${{ github.repository }}
+      STAGING_ENVIRONMENT: pages-test
+      STAGING_BASE_REVISION: ${{ github.sha }}
+      STAGING_FIELD: ${{ inputs.field }}
+      STAGING_TEXT: ${{ inputs.text }}
+      STAGING_RATIONALE: ${{ inputs.rationale }}
+      STAGING_EVIDENCE_IDS: ${{ inputs.evidence_ids }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate and generate isolated preview
+        run: python -m prymage_agent.staging stage
+      - name: Install browser test runtime
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Check candidate in desktop and mobile browsers
+        run: python -m prymage_agent.staging.browser_check candidate-bundle/candidate.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website-candidate
+          path: candidate-bundle/
+          retention-days: 2
+      - name: Show exact candidate hash
+        run: |
+          python -c "import json,os; m=json.load(open('candidate-bundle/manifest.json')); open(os.environ['GITHUB_STEP_SUMMARY'],'a').write('Download website-candidate and review preview.html plus candidate.html.\n\nCandidate SHA-256: '+m['content_hash']+'\n\nThis run does not publish. Approval expires 24 hours after this run was created.\n')"

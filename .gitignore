@@ -1,0 +1,5 @@
+candidate-bundle/
+pages-artifact/
+rollback-artifact/
+__pycache__/
+*.pyc
