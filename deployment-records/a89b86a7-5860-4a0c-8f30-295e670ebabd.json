@@ -1,0 +1,20 @@
+{
+  "proposal_id": "a89b86a7-5860-4a0c-8f30-295e670ebabd",
+  "content_hash": "7c620880e3d2c0a1aee33bd211a62f3039ff6d07a5ca36a9c6dcb62a85af41d6",
+  "base_hash": "0cd85907e615cbcab982919c66476b9febd6bc0ef774798b5f74d6e6960d092f",
+  "base_revision": "f4f69777e6c5c6d46dbbbec6c7a96e469396038a",
+  "status": "PUBLISHING",
+  "approval": {
+    "proposal_id": "a89b86a7-5860-4a0c-8f30-295e670ebabd",
+    "content_hash": "7c620880e3d2c0a1aee33bd211a62f3039ff6d07a5ca36a9c6dcb62a85af41d6",
+    "base_hash": "0cd85907e615cbcab982919c66476b9febd6bc0ef774798b5f74d6e6960d092f",
+    "repository": "lee-jr11/prymage-staging-sandbox",
+    "environment": "pages-test",
+    "approver": "lee-jr11",
+    "approved_at": "2026-10-08T17:58:13.872582+00:00",
+    "expires_at": "2026-10-09T17:46:19.008401+00:00",
+    "execution_state": "CONSUMED"
+  },
+  "workflow_run_id": "37820575585",
+  "updated_at": "2026-10-08T17:58:13.884146+00:00"
+}
