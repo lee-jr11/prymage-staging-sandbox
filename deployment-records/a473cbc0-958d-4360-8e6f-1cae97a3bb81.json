@@ -3,7 +3,7 @@
   "content_hash": "2943ebadb11228b642f87146ff6a7e3ace0b1051e78f10dd728584d4e9e5ab4d",
   "base_hash": "be9f5ebd6425742371528b1a7e3d3aa0a382e9141b78936bd67563d971fe2fb0",
   "base_revision": "5d75ec789e458c8a49819f45dbfc48e7ab991056",
-  "status": "PUBLISHING",
+  "status": "VERIFIED",
   "approval": {
     "proposal_id": "a473cbc0-958d-4360-8e6f-1cae97a3bb81",
     "content_hash": "2943ebadb11228b642f87146ff6a7e3ace0b1051e78f10dd728584d4e9e5ab4d",
@@ -17,5 +17,5 @@
   },
   "workflow_run_id": "37828904098",
   "rollback_drill": false,
-  "updated_at": "2026-10-08T19:03:04.438003+00:00"
+  "updated_at": "2026-10-08T19:03:20.037137+00:00"
 }
