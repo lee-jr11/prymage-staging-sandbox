@@ -10,6 +10,10 @@ on:
         description: Exact SHA-256 from the reviewed candidate manifest
         type: string
         required: true
+      rollback_drill:
+        description: Sandbox-only forced health failure; candidate HTML must equal baseline
+        type: boolean
+        default: false
 concurrency:
   group: sandbox-pages-publication
   cancel-in-progress: false
@@ -33,6 +37,7 @@ jobs:
       STAGING_APPROVERS: ${{ vars.STAGING_APPROVERS }}
       STAGING_EXPECTED_HASH: ${{ inputs.content_hash }}
       PREVIEW_RUN_ID: ${{ inputs.preview_run_id }}
+      STAGING_ROLLBACK_DRILL: ${{ inputs.rollback_drill && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,6 +69,9 @@ jobs:
         run: |
           mkdir pages-artifact
           cp index.html pages-artifact/index.html
+          if [ "$STAGING_ROLLBACK_DRILL" = 'true' ]; then
+            printf '%s' "$GITHUB_RUN_ID" > pages-artifact/rollback-drill-canary.txt
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: pages-artifact
@@ -73,7 +81,13 @@ jobs:
         id: health
         env:
           LIVE_URL: ${{ steps.deploy.outputs.page_url }}
-        run: python -m prymage_agent.staging health --url "$LIVE_URL"
+        run: |
+          python -m prymage_agent.staging health --url "$LIVE_URL"
+          if [ "$STAGING_ROLLBACK_DRILL" = 'true' ]; then
+            python -m prymage_agent.staging.rollback_drill present "$LIVE_URL" "$GITHUB_RUN_ID"
+            echo 'Intentional sandbox health-gate failure: exercise automatic rollback.'
+            exit 1
+          fi
       - name: Record verified release
         if: success()
         run: python -m prymage_agent.staging.github_release verified
@@ -100,6 +114,10 @@ jobs:
           LIVE_URL: ${{ steps.rollback_deploy.outputs.page_url }}
         run: |
           if python -m prymage_agent.staging health --url "$LIVE_URL"; then
+            if [ "$STAGING_ROLLBACK_DRILL" = 'true' ] && ! python -m prymage_agent.staging.rollback_drill absent "$LIVE_URL" "$GITHUB_RUN_ID"; then
+              python -m prymage_agent.staging.github_release rollback-failed
+              exit 1
+            fi
             python -m prymage_agent.staging.github_release rolled-back
           else
             python -m prymage_agent.staging.github_release rollback-failed

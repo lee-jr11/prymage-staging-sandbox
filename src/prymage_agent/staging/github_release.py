@@ -61,6 +61,10 @@ def run(command: str, bundle: Path, site: Path):
         manifest = verify_bundle(bundle, os.environ["STAGING_EXPECTED_HASH"],
                                  os.environ["GITHUB_REPOSITORY"], "pages-test",
                                  site.read_bytes().decode("utf-8"))
+        drill = os.environ.get("STAGING_ROLLBACK_DRILL", "false") == "true"
+        if drill and (os.environ["GITHUB_REPOSITORY"] != "lee-jr11/prymage-staging-sandbox" or
+                      manifest["content_hash"] != manifest["proposal"]["base_hash"]):
+            raise ValueError("Rollback drill is restricted to unchanged HTML in the sandbox")
         if command == "preflight":
             return
         from .__main__ import main
@@ -83,6 +87,7 @@ def run(command: str, bundle: Path, site: Path):
                   "base_revision": revision, "status": "PUBLISHING",
                   "approval": json.loads((bundle / "approval.json").read_text()),
                   "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+                  "rollback_drill": drill,
                   "updated_at": datetime.now(timezone.utc).isoformat()}
         record["approval"]["execution_state"] = "CONSUMED"
         site.write_bytes((bundle / "candidate.html").read_bytes())
