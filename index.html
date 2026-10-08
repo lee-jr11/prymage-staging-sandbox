@@ -364,7 +364,7 @@
       const entry = document.createElement('div');
       entry.className = 'event-item';
       entry.innerHTML = `<span style="color: #94A3B8;">[${time}]</span> <span class="event-tag">${eventName}</span>: ${JSON.stringify(params)}`;
-      
+
       // Remove placeholder if present
       if (logContainer.children.length === 1 && logContainer.children[0].innerText.includes('[Ready]')) {
         logContainer.innerHTML = '';
