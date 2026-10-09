@@ -12,6 +12,7 @@ import sys
 
 def check(source: str, screenshot: Path | None = None, channel: str | None = None):
     from playwright.sync_api import sync_playwright
+    prefix = "pilot_" if "Pilot GA4 loader is gated" in source else ""
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         (directory / "index.html").write_bytes(source.encode("utf-8"))
@@ -42,19 +43,19 @@ def check(source: str, screenshot: Path | None = None, channel: str | None = Non
                         cta.click()
                         events = page.evaluate("Array.from(window.dataLayer, x => Array.from(x))")
                         demos = [entry for entry in events if len(entry) > 1 and
-                                 entry[:2] == ["event", "demo_interest"]]
+                                 entry[:2] == ["event", prefix + "demo_interest"]]
                         if len(demos) != 1 or demos[0][2]["link_text"] != cta.inner_text().strip():
                             raise AssertionError("Demo handler or CTA analytics label broken")
                         page.locator("#btn-submit-lead").click()
                         before = page.evaluate("Array.from(window.dataLayer, x => Array.from(x))")
-                        if any(entry[:2] == ["event", "generate_lead"] for entry in before):
+                        if any(entry[:2] == ["event", prefix + "generate_lead"] for entry in before):
                             raise AssertionError("Invalid form emitted a lead event")
                         page.locator("#contact-name").fill("Sandbox Visitor")
                         page.locator("#contact-email").fill("sandbox@example.com")
                         page.locator("#contact-region").select_option("NG")
                         page.locator("#btn-submit-lead").click()
                         events = page.evaluate("Array.from(window.dataLayer, x => Array.from(x))")
-                        leads = [entry for entry in events if entry[:2] == ["event", "generate_lead"]]
+                        leads = [entry for entry in events if entry[:2] == ["event", prefix + "generate_lead"]]
                         if len(leads) != 1 or leads[0][2]["declared_market"] != "NG":
                             raise AssertionError("Valid form handler broken")
                         if "sandbox@example.com" in str(events) or "Sandbox Visitor" in str(events):
