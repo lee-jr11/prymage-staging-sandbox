@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta id="prymage-synthetic-tracking" http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<head><meta id="prymage-synthetic-tracking" http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://www.googletagmanager.com; style-src 'unsafe-inline'; img-src data:; connect-src https://www.google-analytics.com https://region1.google-analytics.com; form-action 'none'; base-uri 'none'">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prymage Enterprise Systems | Pilot Verification Site</title>
@@ -13,14 +13,15 @@
   <!-- GOOGLE ANALYTICS 4 (GA4) TRACKING CODE                              -->
   <!-- Replace 'G-EP0Y94K2B6' with your pilot GA4 Measurement ID           -->
   <!-- =================================================================== -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-EP0Y94K2B6"></script>
+  <!-- Pilot GA4 loader is gated by telemetry=ga4-test. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
+    window['ga-disable-G-EP0Y94K2B6'] = true;
     gtag('js', new Date());
     // Replace with your real test property Measurement ID:
     gtag('config', 'G-EP0Y94K2B6', {
-      'debug_mode': true // Enables GA4 DebugView for real-time verification
+      'debug_mode': true, 'send_page_view': false, 'allow_google_signals': false, 'allow_ad_personalization_signals': false
     });
   </script>
 
@@ -423,9 +424,11 @@
       }, 5000);
     }
   </script>
-<script>// Local synthetic preview only. Deployment requires a separate reviewed script release.
+<script>// Opt-in pilot GA4 test. No company property; no real enquiry data.
 (() => {
   'use strict';
+  const enabled = new URLSearchParams(location.search).get('telemetry') === 'ga4-test';
+  const measurement = 'G-EP0Y94K2B6';
   const id = 'workflow_headline_v1';
   const key = 'prymage.synthetic.' + id;
   const forced = new URLSearchParams(location.search).get('variant');
@@ -441,12 +444,12 @@
     variant = ['control', 'assessment'].includes(forced) ? forced : 'assessment';
   }
   const metadata = {experiment_id: id, experiment_variant: variant,
-    content_version: 'headline-2026-10-09-v1', data_kind: 'synthetic'};
+    content_version: 'headline-2026-10-09-v1', data_kind: 'synthetic', debug_mode: true};
   const original = window.gtag;
   window.gtag = function(command, name, params) {
     if (command === 'event') {
       params = Object.assign({}, params || {}, metadata);
-      return original(command, name, params);
+      return original(command, 'pilot_' + name, params);
     }
     return original.apply(this, arguments);
   };
@@ -455,10 +458,18 @@
       'Connect your operations. See your business clearly.' :
       'Find the gaps between your business systems.';
     const label = document.createElement('p');
-    label.textContent = 'Synthetic headline experiment: ' + variant + '. External tracking is blocked.';
+    label.textContent = 'Synthetic headline experiment: ' + variant + (enabled ? '. Pilot GA4 test enabled.' : '. External tracking is blocked.');
     label.id = 'experiment-status';
     document.querySelector('.hero').appendChild(label);
     window.gtag('event', 'experiment_exposure', metadata);
+  }
+  if (enabled) {
+    window['ga-disable-' + measurement] = false;
+    gtag('set', Object.assign({}, metadata, {page_location: location.origin + location.pathname, page_referrer: ''}));
+    const loader = document.createElement('script');
+    loader.async = true;
+    loader.src = 'https://www.googletagmanager.com/gtag/js?id=' + measurement;
+    document.head.appendChild(loader);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', expose, {once:true});
   else expose();
