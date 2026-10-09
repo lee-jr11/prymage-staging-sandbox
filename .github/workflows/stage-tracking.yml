@@ -1,0 +1,33 @@
+name: Stage synthetic tracking
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build exact network-isolated synthetic candidate
+        run: python -m prymage_agent.staging.tracking_bundle
+      - name: Install browser runtime
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify protected handlers and mobile layout
+        run: python -m prymage_agent.staging.browser_check candidate-bundle/candidate.html
+      - name: Verify both variants and synthetic event attribution
+        run: python tools/check_experiment_preview.py candidate-bundle/candidate.html chromium
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website-candidate
+          path: candidate-bundle/
+          retention-days: 2
+      - name: Show exact review hash
+        run: python -c "import json,os; m=json.load(open('candidate-bundle/manifest.json')); open(os.environ['GITHUB_STEP_SUMMARY'],'a').write('Synthetic tracking only; external telemetry blocked. Review the exact artifact before publication.\nCandidate hash '+m['content_hash'])"

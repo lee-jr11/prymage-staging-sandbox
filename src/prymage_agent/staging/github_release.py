@@ -36,7 +36,12 @@ def commit_release(site: Path, ledger: Path, record: dict, expected_revision: st
     return git("rev-parse", "HEAD")
 
 
-def run(command: str, bundle: Path, site: Path):
+def run(command: str, bundle: Path, site: Path, *, tracking: bool = False):
+    verifier = verify_bundle
+    expected_workflow = '.github/workflows/stage.yml'
+    if tracking:
+        from .tracking_bundle import verify as verifier
+        expected_workflow = '.github/workflows/stage-tracking.yml'
     context_path = bundle / "execution.json"
     if command in ("prepare", "preflight"):
         if os.environ["GITHUB_RUN_ATTEMPT"] != "1":
@@ -45,7 +50,7 @@ def run(command: str, bundle: Path, site: Path):
             raise ValueError("Publication must run from main")
         metadata = json.loads((bundle / "run.json").read_text(encoding="utf-8"))
         revision = git("rev-parse", "HEAD")
-        if (metadata["path"] != ".github/workflows/stage.yml" or
+        if (metadata["path"] != expected_workflow or
                 metadata["event"] != "workflow_dispatch" or
                 metadata["conclusion"] != "success" or
                 metadata["head_sha"] != revision or
@@ -58,24 +63,30 @@ def run(command: str, bundle: Path, site: Path):
         allowed = {item.strip().casefold() for item in os.environ["STAGING_APPROVERS"].split(",")}
         if actor not in allowed:
             raise SystemExit("Unauthorized workflow actor")
-        manifest = verify_bundle(bundle, os.environ["STAGING_EXPECTED_HASH"],
+        manifest = verifier(bundle, os.environ["STAGING_EXPECTED_HASH"],
                                  os.environ["GITHUB_REPOSITORY"], "pages-test",
                                  site.read_bytes().decode("utf-8"))
+        if manifest['proposal']['base_revision'] != revision:
+            raise ValueError('Preview base commit changed')
         drill = os.environ.get("STAGING_ROLLBACK_DRILL", "false") == "true"
         if drill and (os.environ["GITHUB_REPOSITORY"] != "lee-jr11/prymage-staging-sandbox" or
                       manifest["content_hash"] != manifest["proposal"]["base_hash"]):
             raise ValueError("Rollback drill is restricted to unchanged HTML in the sandbox")
         if command == "preflight":
             return
-        from .__main__ import main
-        previous = sys.argv
-        try:
-            sys.argv = ["staging", "approve-bundle", "--site", str(site),
-                        "--bundle", str(bundle)]
-            main()
-        finally:
-            sys.argv = previous
-        manifest = verify_bundle(bundle, os.environ["STAGING_EXPECTED_HASH"],
+        if tracking:
+            from .tracking_bundle import approve
+            approve(bundle, manifest)
+        else:
+            from .__main__ import main
+            previous = sys.argv
+            try:
+                sys.argv = ["staging", "approve-bundle", "--site", str(site),
+                            "--bundle", str(bundle)]
+                main()
+            finally:
+                sys.argv = previous
+        manifest = verifier(bundle, os.environ["STAGING_EXPECTED_HASH"],
                                  os.environ["GITHUB_REPOSITORY"], "pages-test",
                                  site.read_bytes().decode("utf-8"))
         proposal_id = manifest["proposal"]["proposal_id"]

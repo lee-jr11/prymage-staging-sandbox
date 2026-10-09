@@ -1,0 +1,139 @@
+name: Approve and publish synthetic tracking
+on:
+  workflow_dispatch:
+    inputs:
+      preview_run_id:
+        description: Successful Stage synthetic tracking run ID
+        type: string
+        required: true
+      content_hash:
+        description: Exact SHA-256 from the reviewed candidate manifest
+        type: string
+        required: true
+      rollback_drill:
+        description: Sandbox-only forced health failure; candidate HTML must equal baseline
+        type: boolean
+        default: false
+concurrency:
+  group: sandbox-pages-publication
+  cancel-in-progress: false
+permissions:
+  contents: write
+  actions: read
+  pages: write
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      PYTHONPATH: src
+      GH_TOKEN: ${{ github.token }}
+      STAGING_REPOSITORY: ${{ github.repository }}
+      STAGING_ENVIRONMENT: pages-test
+      STAGING_APPROVERS: ${{ vars.STAGING_APPROVERS }}
+      STAGING_EXPECTED_HASH: ${{ inputs.content_hash }}
+      PREVIEW_RUN_ID: ${{ inputs.preview_run_id }}
+      STAGING_ROLLBACK_DRILL: ${{ inputs.rollback_drill && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check workflow caller before downloading
+        run: |
+          python -c "import os,re; assert os.environ['GITHUB_REF']=='refs/heads/main'; assert os.environ['GITHUB_RUN_ATTEMPT']=='1'; assert re.fullmatch(r'[0-9]+',os.environ['PREVIEW_RUN_ID']); assert os.environ['GITHUB_ACTOR'].casefold() in {x.strip().casefold() for x in os.environ['STAGING_APPROVERS'].split(',') if x.strip()}"
+      - name: Download candidate and its provenance
+        run: |
+          gh run download "$PREVIEW_RUN_ID" --repo "$GITHUB_REPOSITORY" --name website-candidate --dir candidate-bundle
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PREVIEW_RUN_ID" > candidate-bundle/run.json
+      - uses: actions/configure-pages@v5
+      - name: Validate provenance, target, base and exact candidate before browser checks
+        run: python -m prymage_agent.staging.tracking_release preflight
+      - name: Install browser test runtime
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Recheck candidate behavior with tracking network blocked
+        run: python -m prymage_agent.staging.browser_check candidate-bundle/candidate.html
+      - name: Recheck both synthetic variants and event attribution
+        run: python tools/check_experiment_preview.py candidate-bundle/candidate.html chromium
+      - name: Consume exact-version approval and persist release ledger
+        id: prepare
+        run: python -m prymage_agent.staging.tracking_release prepare
+      - name: Build candidate deployment
+        run: |
+          mkdir pages-artifact
+          cp index.html pages-artifact/index.html
+          if [ "$STAGING_ROLLBACK_DRILL" = 'true' ]; then
+            printf '%s' "$GITHUB_RUN_ID" > pages-artifact/rollback-drill-canary.txt
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-artifact
+      - uses: actions/deploy-pages@v4
+        id: deploy
+      - name: Verify served candidate
+        id: health
+        env:
+          LIVE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          python -m prymage_agent.staging health --url "$LIVE_URL"
+          if [ "$STAGING_ROLLBACK_DRILL" = 'true' ]; then
+            python -m prymage_agent.staging.rollback_drill present "$LIVE_URL" "$GITHUB_RUN_ID"
+            echo 'Intentional sandbox health-gate failure: exercise automatic rollback.'
+            exit 1
+          fi
+      - name: Record verified release
+        if: success()
+        run: python -m prymage_agent.staging.tracking_release verified
+      - name: Restore previous source without overwriting a newer release
+        id: restore
+        if: failure() && steps.prepare.outcome == 'success'
+        run: |
+          python -m prymage_agent.staging.tracking_release rollback
+          mkdir -p rollback-artifact
+          cp index.html rollback-artifact/index.html
+      - uses: actions/upload-pages-artifact@v3
+        if: failure() && steps.restore.outcome == 'success'
+        with:
+          name: rollback-pages
+          path: rollback-artifact
+      - uses: actions/deploy-pages@v4
+        id: rollback_deploy
+        if: failure() && steps.restore.outcome == 'success'
+        with:
+          artifact_name: rollback-pages
+      - name: Verify rollback and record outcome
+        if: failure() && steps.restore.outcome == 'success'
+        env:
+          LIVE_URL: ${{ steps.rollback_deploy.outputs.page_url }}
+        run: |
+          if python -m prymage_agent.staging health --url "$LIVE_URL"; then
+            if [ "$STAGING_ROLLBACK_DRILL" = 'true' ] && ! python -m prymage_agent.staging.rollback_drill absent "$LIVE_URL" "$GITHUB_RUN_ID"; then
+              python -m prymage_agent.staging.tracking_release rollback-failed
+              exit 1
+            fi
+            python -m prymage_agent.staging.tracking_release rolled-back
+          else
+            python -m prymage_agent.staging.tracking_release rollback-failed
+            exit 1
+          fi
+      - name: Retain approval and incident evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-execution-${{ github.run_id }}
+          path: |
+            candidate-bundle/approval.json
+            candidate-bundle/execution.json
+            candidate-bundle/incident.json
+            deployment-records/
+          if-no-files-found: ignore
+          retention-days: 30
