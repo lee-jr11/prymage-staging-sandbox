@@ -1,4 +1,5 @@
 name: Stage website copy
+run-name: 'Website stage: ${{ inputs.handoff_id || github.run_id }}'
 on:
   workflow_dispatch:
     inputs:
@@ -16,6 +17,15 @@ on:
         description: 'JSON array of source evidence IDs, e.g. ["market:123"]'
         type: string
         required: true
+      expected_base_revision:
+        description: Expected sandbox commit for an automatic handoff
+        type: string
+      expected_content_hash:
+        description: Exact prepared candidate hash for an automatic handoff
+        type: string
+      handoff_id:
+        description: Originating review run and attempt
+        type: string
 permissions:
   contents: read
 jobs:
@@ -31,13 +41,30 @@ jobs:
       STAGING_TEXT: ${{ inputs.text }}
       STAGING_RATIONALE: ${{ inputs.rationale }}
       STAGING_EVIDENCE_IDS: ${{ inputs.evidence_ids }}
+      EXPECTED_BASE_REVISION: ${{ inputs.expected_base_revision }}
+      EXPECTED_CONTENT_HASH: ${{ inputs.expected_content_hash }}
+      HANDOFF_ID: ${{ inputs.handoff_id }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Validate and generate isolated preview
-        run: python -m prymage_agent.staging stage
+        run: |
+          python - <<'PY'
+          import os, re, subprocess, json
+          base=os.environ['EXPECTED_BASE_REVISION']
+          expected=os.environ['EXPECTED_CONTENT_HASH']
+          handoff=os.environ['HANDOFF_ID']
+          if any((base,expected,handoff)):
+              if not (re.fullmatch(r'[a-f0-9]{40}',base) and re.fullmatch(r'[a-f0-9]{64}',expected) and re.fullmatch(r'[0-9]+-[0-9]+',handoff)):
+                  raise SystemExit('Incomplete or invalid handoff identifiers')
+              if base != os.environ['STAGING_BASE_REVISION']:
+                  raise SystemExit('Sandbox baseline changed; prepare a fresh candidate')
+          subprocess.run(['python','-m','prymage_agent.staging','stage'],check=True)
+          if expected and json.load(open('candidate-bundle/manifest.json'))['content_hash'] != expected:
+              raise SystemExit('Staged copy differs from the reviewed preparation')
+          PY
       - name: Install browser test runtime
         run: |
           pip install playwright
