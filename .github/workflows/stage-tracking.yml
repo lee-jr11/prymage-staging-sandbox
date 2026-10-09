@@ -1,6 +1,12 @@
 name: Stage synthetic tracking
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Reviewed tracking release type
+        type: choice
+        options: [local, ga4]
+        default: local
 permissions:
   contents: read
 jobs:
@@ -9,6 +15,7 @@ jobs:
     timeout-minutes: 8
     env:
       PYTHONPATH: src
+      STAGING_TRACKING_MODE: ${{ inputs.mode }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -38,6 +38,9 @@ def create(baseline: str, script: str, directory: Path, repository: str, revisio
 
 def verify(directory: Path, expected: str, repository: str, environment: str, current: str):
     manifest = json.loads((directory/'manifest.json').read_text(encoding='utf-8'))
+    if manifest['proposal']['field'] == 'synthetic_ga4_tracking':
+        from .ga4_bundle import verify as verify_ga4
+        return verify_ga4(directory, expected, repository, environment, current)
     proposal = WebsiteProposal(**manifest['proposal'])
     script = Path('experiment-preview.js').read_text(encoding='utf-8')
     baseline = (directory/'baseline.html').read_bytes().decode('utf-8')
@@ -70,7 +73,14 @@ def approve(directory: Path, manifest: dict):
 
 
 if __name__ == '__main__':
+    mode = os.environ.get('STAGING_TRACKING_MODE', 'local')
+    script_name = 'experiment-preview.js'
+    if mode == 'ga4':
+        from .ga4_bundle import create
+        script_name = 'experiment-ga4.js'
+    elif mode != 'local':
+        raise ValueError('Unsupported tracking mode')
     manifest = create(Path('index.html').read_bytes().decode('utf-8'),
-        Path('experiment-preview.js').read_text(encoding='utf-8'), Path('candidate-bundle'),
+        Path(script_name).read_text(encoding='utf-8'), Path('candidate-bundle'),
         os.environ['GITHUB_REPOSITORY'],os.environ['GITHUB_SHA'])
     print(json.dumps(manifest,indent=2))
